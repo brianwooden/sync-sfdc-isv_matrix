@@ -1,5 +1,5 @@
-# isv-sync
-delta finder between sfdc tech partner tracker &amp; go/isvmatrix
+# sync-sfdc-isv_matrix
+Python to evaluate CSV files from SFDC &amp; go/isvmatrix and report on discrepancies
 
 # v0.5
 brian.wooden@databricks.com
