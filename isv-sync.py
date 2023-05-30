@@ -44,23 +44,23 @@ def main():
                 for isv_row in reader_right:
                     if sfdc_row['Account ID'] == isv_row['Databricks Salesforce Account Id']:
                         # use upper case evals for SA as they're incosistent across systems
-                        if isv_row['Partner SA'].upper() != sfdc_row['Databricks Parter SA'].upper():
+                        if isv_row['Partner SA'].upper() != sfdc_row['Databricks Partner SA'].upper():
                             # unassigned looks differently across systems, and not spelled correctly, but I digress, let's check to make sure both aren't "unassigned" before moving on (if they are both unassigned, they match)
-                            if not (len(sfdc_row['Databricks Parter SA'].upper()) == 0 and isv_row['Partner SA'].upper() == 'UNASIGNED'):
+                            if not (len(sfdc_row['Databricks Partner SA'].upper()) == 0 and isv_row['Partner SA'].upper() == 'UNASIGNED'):
                                 # replace empty strings (and mispelled UNASIGNEDs) with 'UNASSIGNED', for reporting purposes
-                                if len(sfdc_row['Databricks Parter SA']) == 0:
-                                    sfdc_row['Databricks Parter SA'] = 'UNASSIGNED'
+                                if len(sfdc_row['Databricks Partner SA']) == 0:
+                                    sfdc_row['Databricks Partner SA'] = 'UNASSIGNED'
                                 if isv_row['Partner SA'].upper() == 'UNASIGNED' or len(isv_row['Partner SA']) == 0:
                                     isv_row['Partner SA'] = 'UNASSIGNED'
                                 # sometimes a Timothy is known as Tim, so ignore first name if last name is Sepp
                                 try:
-                                    if isv_row['Partner SA'].upper().split(' ', 1)[1] == 'SEPP' and sfdc_row['Databricks Parter SA'].upper().split(' ', 1)[1] == 'SEPP':  
+                                    if isv_row['Partner SA'].upper().split(' ', 1)[1] == 'SEPP' and sfdc_row['Databricks Partner SA'].upper().split(' ', 1)[1] == 'SEPP':  
                                         pass
                                     else:
-                                        print('SFDC Account', sfdc_row['Account Name'], 'has SA', sfdc_row['Databricks Parter SA'], 'whereas go/isvmatrix Account', isv_row['Partner'], 'has SA', isv_row['Partner SA'])
+                                        print('SFDC Account', sfdc_row['Account Name'], 'has SA', sfdc_row['Databricks Partner SA'], 'whereas go/isvmatrix Account', isv_row['Partner'], 'has SA', isv_row['Partner SA'])
                                 # whenever we do a split, make sure it isn't a dreaded 7-10 split, as it were (bowling joke! But do make sure we didn't reference an index that didn't exist b/c we're trying to split an unsplittable, as it were
                                 except IndexError:
-                                        print('SFDC Account', sfdc_row['Account Name'], 'has SA', sfdc_row['Databricks Parter SA'], 'whereas go/isvmatrix Account', isv_row['Partner'], 'has SA', isv_row['Partner SA'])
+                                        print('SFDC Account', sfdc_row['Account Name'], 'has SA', sfdc_row['Databricks Partner SA'], 'whereas go/isvmatrix Account', isv_row['Partner'], 'has SA', isv_row['Partner SA'])
 
                 # rewind ISV file
                 isv_file.seek(0)
@@ -137,7 +137,7 @@ def main():
                             print ('Updating SFDC Account', sfdc_row['Account Name'], 'category from', sfdc_row['ISV Partner Category'], 'to ML/ AI in go/isvmatrix update-helper file...')
                             sfdc_row['ISV Partner Category'] = 'ML/ AI'
                         print('Adding SFDC Account', sfdc_row['Account Name'],'with Account ID', sfdc_row['Account ID'], 'to go/isvmatrix update-helper file:', new_matrix)
-                        writer.writerow({'Partner': sfdc_row['Account Name'],'Partner Manager': sfdc_row['Partner Manager'],'Partner Category (Salesforce)': sfdc_row['ISV Partner Category'],'Partner SA': sfdc_row['Databricks Parter SA'],'Databricks Salesforce Account Id': sfdc_row['Account ID'],'Integration Status': sfdc_row['ISV Onboarding Status']})
+                        writer.writerow({'Partner': sfdc_row['Account Name'],'Partner Manager': sfdc_row['Partner Manager'],'Partner Category (Salesforce)': sfdc_row['ISV Partner Category'],'Partner SA': sfdc_row['Databricks Partner SA'],'Databricks Salesforce Account Id': sfdc_row['Account ID'],'Integration Status': sfdc_row['ISV Onboarding Status']})
                     # be kind, rewind ISV file
                     isv_file.seek(0)
             # be kind, rewind SFDC file
@@ -172,7 +172,7 @@ if __name__ == "__main__":
     """
     SFDC File (source, SFDC export, details only, UTF-8)
     Expected Headers::
-    "Account Name","Partner Manager","ISV Partner Category","Databricks Parter SA","PPA Signed IP Address","New Partner Agreement Signed Date","Created Date","Account ID","ISV Onboarding Status"
+    "Account Name","Partner Manager","ISV Partner Category","Databricks Partner SA","PPA Signed IP Address","New Partner Agreement Signed Date","Created Date","Account ID","ISV Onboarding Status"
     """
     sfdc = './sfdc.csv'
 
@@ -185,7 +185,7 @@ if __name__ == "__main__":
 
     # new csv to capture accounts in sfdc that are not in the isv matrix
     new_matrix = 'new_matrix.csv'
-           
+
     with open(isv_matrix, 'r') as f:
         first_line = f.readline()
         if first_line.startswith(',,,,,,,,Deployment'):
@@ -199,6 +199,6 @@ if __name__ == "__main__":
 
     isv_expected_headers = ['Tier', 'Partner', 'Partner Product', 'Partner Category (Salesforce)', 'Product sub-category', 'Integration Status', 'Partner Manager', 'Partner SA', 'SaaS', 'Self-hosted', 'Cloud Marketplace', 'On Databricks Partner Connect', 'Has OSS offering', 'Has free saas trial', 'Has on-prem agent', 'AWS', 'Azure', 'GCP', 'Have Databricks named connector', 'Delta as source', 'Delta as target', 'Library', 'SQL Warehouse', 'Serverless', 'Interactive Clusters', 'Automated Clusters', 'Delta Live Tables', 'Support Unity Catalog', 'Multiple catalog support', 'Catalog configured at connection in ISV product', 'Leverages UC personal Staging locations', 'Supports Delta Sharing', 'Execute SQL', 'Submits Python Jobs', 'Submits Scala or Java Jobs', 'REST api', 'JDBC', 'ODBC', 'Use Databricks Connectors', 'User Agent string passed', 'Integration uses a Library', 'ML flow integration', 'Strengths', 'Comments (pricing and misc)', 'Partners documentation link', 'Automatically create delta tables if the table does not exist', 'Support external tables', 'Support partitioning based on certain columns', 'ISV managed staging location for Ingest', 'Customer owned staging location for ingest', 'UC managed personal staging locations for ingest', 'Support UC external tables', 'g1', 'g2', 'g3', 's1', 's2', 's3', 's4', 'Integrates with mlflow registry', 'Integrates with mlflow experiments and tracking', 'Integrates with model serving', 'Integrates with databricks feature store', 'Push ML workloads into Databricks', 'Databricks Salesforce Account Id', 'Last updated date', 'Last integration review mm/yyyy', 'FedRAMP', 'HIPPA', 'Built on Databricks']
     if validate_csv_headers(isv_matrix, isv_expected_headers):
-        sfdc_expected_headers = ['Account Name', 'Partner Manager', 'ISV Partner Category', 'Databricks Parter SA', 'PPA Signed IP Address', 'New Partner Agreement Signed Date', 'Created Date', 'Account ID', 'ISV Onboarding Status']
+        sfdc_expected_headers = ['Account Name', 'Partner Manager', 'ISV Partner Category', 'Databricks Partner SA', 'PPA Signed IP Address', 'New Partner Agreement Signed Date', 'Created Date', 'Account ID', 'ISV Onboarding Status']
         if validate_csv_headers(sfdc, sfdc_expected_headers):
             main()
