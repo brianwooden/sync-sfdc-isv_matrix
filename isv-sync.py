@@ -144,6 +144,7 @@ def main():
             sfdc_file.seek(0)
 
             # look for accounts that exist in ISV Matrix but not SFDC, print those
+            not_in_sfdc = []
             print_section_separator('Account Deltas (in ISV Matrix, not in SFDC)')       
             for isv_row in reader_right:
                 matrix_in_sfdc = False
@@ -155,9 +156,13 @@ def main():
                         print ('index error in isv ghosts part 1\nisv:', isv_row, '\nsfdc: ', sfdc_row)
                     except KeyError:
                         print ('key error in isv ghosts part 1\nisv:', isv_row, '\nsfdc: ', sfdc_row)                   
+
                 try:
                     if not matrix_in_sfdc and sfdc_row['Account ID'] != 'Account ID':
-                        print('Not in SFDC: ISV Matrix Account', isv_row['Partner'],'with Account ID', isv_row['Databricks Salesforce Account Id'])
+                        row_to_add = (isv_row['Partner'], isv_row['Databricks Salesforce Account Id'])
+                        if len(row_to_add) > 0:
+                            if not isv_row['Partner'].lower() == 'partner':
+                                not_in_sfdc.append(row_to_add)
                 except IndexError:
                     print ('index error in isv ghosts part 2\nisv:', isv_row, '\nsfdc: ', sfdc_row)
                 except KeyError:
@@ -167,6 +172,10 @@ def main():
                 sfdc_file.seek(0)
             # be kind, rewind ISV file
             isv_file.seek(0)
+
+            not_in_sfdc.sort(key=lambda x: x[0])
+            for partner, account_id in not_in_sfdc:
+                print('Not in SFDC: ISV Matrix Account', partner,'with Account ID', account_id)
 
 if __name__ == "__main__": 
     """
@@ -188,8 +197,12 @@ if __name__ == "__main__":
 
     with open(isv_matrix, 'r') as f:
         first_line = f.readline()
-        if first_line.startswith(',,,,,,,,Deployment'):
-            print('The top of', isv_matrix, 'file starts with \',,,,,,,,Deployment\'. That is not ideal because that is header line 1 of 2, and we only use the 2nd line for downstream field list. Lopping off the top line and overwriting', isv_matrix, '...')
+        if first_line.startswith(',,,,,,,,Deployment') or first_line.startswith(',num_validated_intgrtns'):
+            if len(first_line) > 20:
+                print('The top of', isv_matrix, 'file starts with\'', first_line[:20], '\'. That is not ideal because that is header line 1 of 2, and we only use the 2nd line for downstream field list. Lopping off the top line and overwriting', isv_matrix, '...')
+            else:
+                print('The top of', isv_matrix, 'file starts with\'', first_line[:len(first_line)], '\'. That is not ideal because that is header line 1 of 2, and we only use the 2nd line for downstream field list. Lopping off the top line and overwriting', isv_matrix, '...')
+                
             with open(isv_matrix, 'r') as fin:
                 data = fin.read().splitlines(True)
             with open(isv_matrix, 'w') as fout:

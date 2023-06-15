@@ -1,6 +1,27 @@
 # sync-sfdc-isv_matrix
 Python to evaluate CSV files from SFDC &amp; go/isvmatrix and report on discrepancies
 
+# v0.7
+brian.wooden@databricks.com
+2023-06-14 12:20 EDT
+
+**Usage Instructions**:
+ 1. Manually pull CSV from SFDC tech tracker report & go/isvmatrix
+ 2. lop off first row of isvmatrix (it has two header rows)
+ 3. Update paths in isv-sync.py to reflect above files
+ 4. run isv-sync.py
+ 5. View discrepancies
+ 6. Manually resolve
+ 7. Rinse & Repeat
+
+
+## Changelog
+ - Updated headers for ISV Matrix to reflect new "partner integration count" in worksheet
+ - Re-worked logic of "found in ISV Matrix but not SFDC" to sort report alphabetically to find like-errors
+
+### TODO
+ - centralize various discrepancy finders (integration status, category names, etc)
+
 # v0.6
 brian.wooden@databricks.com
 2023-05-30 17:25 EDT
