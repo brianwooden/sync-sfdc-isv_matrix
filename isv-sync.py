@@ -144,7 +144,7 @@ def main(isv_csv_fieldnames, output_mode):
                             if not output_mode.upper() == 'CSV':
                                 print('SFDC Account', sfdc_row['Account Name'], 'has PDM', sfdc_row['Partner Manager'], 'whereas go/isvmatrix Account', isv_row['Partner'], 'has PDM', isv_row['Partner Manager'])
                             else:
-                                report_finding('PDM Delta', sfdc_row['Account Name'], sfdc_row['Partner Manager'], isv_row['Partner'], isv_row['Partner Manager'], 'update PDM in Matrix to ' + isv_row['Partner Manager'])
+                                report_finding('PDM Delta', sfdc_row['Account Name'], sfdc_row['Partner Manager'], isv_row['Partner'], isv_row['Partner Manager'], 'update PDM in Matrix to ' + sfdc_row['Partner Manager'])
                 # be kind, rewind ISV file
                 isv_file.seek(0)
             # be kind, rewind SFDC file

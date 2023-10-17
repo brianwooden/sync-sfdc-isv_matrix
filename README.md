@@ -1,10 +1,6 @@
 # sync-sfdc-isv_matrix
 Python to evaluate CSV files from SFDC &amp; go/isvmatrix and report on discrepancies
 
-# v1.1.1
-brian.wooden@databricks.com
-2023-10-17 09:18 PDT
-
 **Usage Instructions**:
  1. Manually pull CSV from SFDC tech tracker (UTF-8, CSV, Details only) report & go/isvmatrix (CSV)
  2. lop off first row of isvmatrix (it has two header rows)
@@ -13,6 +9,17 @@ brian.wooden@databricks.com
  5. View discrepancies
  6. Manually resolve
  7. Rinse & Repeat
+
+# v1.1.2
+brian.wooden@databricks.com
+2023-10-17 09:18 PDT
+
+## Changelog
+  - Tuned PDM delta report to 'sfdc wins' for recommendation
+
+# v1.1.1
+brian.wooden@databricks.com
+2023-10-17 09:18 PDT
 
  ## Changelog
   - stripped superflous commas from CSV output mode
@@ -22,15 +29,6 @@ brian.wooden@databricks.com
 brian.wooden@databricks.com
 2023-10-17 08:13 PDT
 
-**Usage Instructions**:
- 1. Manually pull CSV from SFDC tech tracker (UTF-8, CSV, Details only) report & go/isvmatrix (CSV)
- 2. lop off first row of isvmatrix (it has two header rows)
- 3. Update paths in isv-sync.py to reflect above files
- 4. run isv-sync.py
- 5. View discrepancies
- 6. Manually resolve
- 7. Rinse & Repeat
-
  ## Changelog
   - Added CSV mode for outputs
   - Defaults to CSV mode for outputs
@@ -38,15 +36,6 @@ brian.wooden@databricks.com
 # v1.0
 brian.wooden@databricks.com
 2023-10-16 18:13 PDT
-
-**Usage Instructions**:
- 1. Manually pull CSV from SFDC tech tracker (UTF-8, CSV, Details only) report & go/isvmatrix (CSV)
- 2. lop off first row of isvmatrix (it has two header rows)
- 3. Update paths in isv-sync.py to reflect above files
- 4. run isv-sync.py
- 5. View discrepancies
- 6. Manually resolve
- 7. Rinse & Repeat
 
 ## Changelog
  - Refreshed headers logic, (re-implemented ISV superflous headers cleanup)
@@ -56,15 +45,6 @@ brian.wooden@databricks.com
 brian.wooden@databricks.com
 2023-10-09 11:53 PDT
 
-**Usage Instructions**:
- 1. Manually pull CSV from SFDC tech tracker report & go/isvmatrix
- 2. lop off first row of isvmatrix (it has two header rows)
- 3. Update paths in isv-sync.py to reflect above files
- 4. run isv-sync.py
- 5. View discrepancies
- 6. Manually resolve
- 7. Rinse & Repeat
-
 ## Changelog
  - Refreshed headers based on changes to ISV Matrix
  - Added logic to faciliate "pooled" SA in matrix if unassigned in SFDC
@@ -72,16 +52,6 @@ brian.wooden@databricks.com
 # v0.8
 brian.wooden@databricks.com
 2023-09-06 14:33 EDT
-
-**Usage Instructions**:
- 1. Manually pull CSV from SFDC tech tracker report & go/isvmatrix
- 2. lop off first row of isvmatrix (it has two header rows)
- 3. Update paths in isv-sync.py to reflect above files
- 4. run isv-sync.py
- 5. View discrepancies
- 6. Manually resolve
- 7. Rinse & Repeat
-
 
 ## Changelog
  - Updated headers check to show differences
@@ -91,16 +61,6 @@ brian.wooden@databricks.com
 brian.wooden@databricks.com
 2023-06-14 12:20 EDT
 
-**Usage Instructions**:
- 1. Manually pull CSV from SFDC tech tracker report & go/isvmatrix
- 2. lop off first row of isvmatrix (it has two header rows)
- 3. Update paths in isv-sync.py to reflect above files
- 4. run isv-sync.py
- 5. View discrepancies
- 6. Manually resolve
- 7. Rinse & Repeat
-
-
 ## Changelog
  - Updated headers for ISV Matrix to reflect new "partner integration count" in worksheet
  - Re-worked logic of "found in ISV Matrix but not SFDC" to sort report alphabetically to find like-errors
@@ -108,16 +68,6 @@ brian.wooden@databricks.com
 # v0.6
 brian.wooden@databricks.com
 2023-05-30 17:25 EDT
-
-**Usage Instructions**:
- 1. Manually pull CSV from SFDC tech tracker report & go/isvmatrix
- 2. lop off first row of isvmatrix (it has two header rows)
- 3. Update paths in isv-sync.py to reflect above files
- 4. run isv-sync.py
- 5. View discrepancies
- 6. Manually resolve
- 7. Rinse & Repeat
-
 
 ## Changelog
  - Updated expected headers in check & code for SFDC file because "Databricks Parter SA" was updated to "Databricks Partner SA".
@@ -174,13 +124,3 @@ The paths are hardcoded at top of isv-sync.py
 **Outputs**:
  - Delta report of differences between the two for fields "SA", "PDM", and "Integration Validation Status", printed to screen
  - CSV file to be appended to go/isvmatrix (for accounts in SFDC not in go/isvmatrix)
-
-
-**Usage Instructions**:
- 1. Manually pull CSV from SFDC tech tracker report & go/isvmatrix
- 2. lop off first row of isvmatrix (it has two header rows)
- 3. Update paths in isv-sync.py to reflect above files
- 4. run isv-sync.py
- 5. View discrepancies
- 6. Manually resolve
- 7. Rinse & Repeat
