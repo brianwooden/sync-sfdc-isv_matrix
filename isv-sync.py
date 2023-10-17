@@ -46,7 +46,7 @@ def print_section_separator(heading_text):
     print()
 
 def report_finding_headers():
-    print (','.join(['section', 'sfdc_partner', 'sfdc_person', 'matrix_partner', 'matrix_person', 'recommended_action']))
+    print (','.join(['section', 'sfdc_partner', 'sfdc_item', 'matrix_partner', 'matrix_item', 'recommended_action']))
 def report_finding(section, sfdc_partner, sfdc_item, matrix_partner, matrix_item, recommended_action):
     if section is None:
         section = ''
