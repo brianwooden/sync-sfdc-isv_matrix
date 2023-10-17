@@ -48,15 +48,30 @@ def print_section_separator(heading_text):
 def report_finding_headers():
     print (','.join(['section', 'sfdc_partner', 'sfdc_person', 'matrix_partner', 'matrix_person', 'recommended_action']))
 def report_finding(section, sfdc_partner, sfdc_item, matrix_partner, matrix_item, recommended_action):
-    if section is None: section = ''
-    if sfdc_partner is None: sfdc_partner = ''
-    if sfdc_item is None: sfdc_item = ''
-    if matrix_partner is None: matrix_partner = ''
-    if matrix_item is None: matrix_item = ''
+    if section is None:
+        section = ''
+    else:
+        section = section.replace(',', '')
+    if sfdc_partner is None:
+        sfdc_partner = ''
+    else:
+        sfdc_partner = sfdc_partner.replace(',', '')
+    if sfdc_item is None:
+        sfdc_item = ''
+    else:
+        sfdc_item = sfdc_item.replace(',', '')
+    if matrix_partner is None:
+        matrix_partner = ''
+    else:
+        matrix_partner = matrix_partner.replace(',', '')
+    if matrix_item is None:
+        matrix_item = ''
+    else:
+        matrix_item = matrix_item.replace(',', '')
     if recommended_action is None:
         recommended_action = ''
     else:
-        recommended_action = recommended_action.replace(',', '_')
+        recommended_action = recommended_action.replace(',', '')
     print (','.join([section, sfdc_partner, sfdc_item, matrix_partner, matrix_item, recommended_action]))
 
 
@@ -202,7 +217,7 @@ def main(isv_csv_fieldnames, output_mode):
                         if not output_mode.upper() == 'CSV':
                             print('Adding SFDC Account', sfdc_row['Account Name'],'with Account ID', sfdc_row['Account ID'], 'to go/isvmatrix update-helper file:', new_matrix)
                         else:
-                            report_finding('Account Delta', sfdc_row['Account Name'], sfdc_row['Account ID'], None, None, 'import matrix helpfer file ' + new_matrix)
+                            report_finding('SFDC Exclusive', sfdc_row['Account Name'], sfdc_row['Account ID'], None, None, 'import matrix helpfer file ' + new_matrix)
                         writer.writerow({'Partner': sfdc_row['Account Name'],'Partner Manager': sfdc_row['Partner Manager'],'Partner Category (Salesforce)': sfdc_row['ISV Partner Category'],'Partner SA': sfdc_row['Databricks Partner SA'],'Databricks Salesforce Account Id': sfdc_row['Account ID'],'Integration Status': sfdc_row['ISV Onboarding Status']})
                     # be kind, rewind ISV file
                     isv_file.seek(0)
@@ -249,7 +264,7 @@ def main(isv_csv_fieldnames, output_mode):
                 if not output_mode.upper() == 'CSV':
                     print('Not in SFDC: ISV Matrix Account', partner,'with Account ID', account_id)
                 else:
-                    report_finding('SFDC-less', None, None, partner, account_id, 'Remove from or fix account ID in Matrix')
+                    report_finding('ISV Exclusive', None, None, partner, account_id, 'Remove from or fix account ID in Matrix')
 
 if __name__ == "__main__":
     """

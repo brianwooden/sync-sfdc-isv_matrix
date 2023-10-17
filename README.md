@@ -1,9 +1,26 @@
 # sync-sfdc-isv_matrix
 Python to evaluate CSV files from SFDC &amp; go/isvmatrix and report on discrepancies
 
+# v1.1.1
+brian.wooden@databricks.com
+2023-10-17 09:18 PDT
+
+**Usage Instructions**:
+ 1. Manually pull CSV from SFDC tech tracker (UTF-8, CSV, Details only) report & go/isvmatrix (CSV)
+ 2. lop off first row of isvmatrix (it has two header rows)
+ 3. Update paths in isv-sync.py to reflect above files
+ 4. run isv-sync.py
+ 5. View discrepancies
+ 6. Manually resolve
+ 7. Rinse & Repeat
+
+ ## Changelog
+  - stripped superflous commas from CSV output mode
+
+
 # v1.1
 brian.wooden@databricks.com
-2023-10-16 18:13 PDT
+2023-10-17 08:13 PDT
 
 **Usage Instructions**:
  1. Manually pull CSV from SFDC tech tracker (UTF-8, CSV, Details only) report & go/isvmatrix (CSV)
