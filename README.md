@@ -6,7 +6,7 @@ brian.wooden@databricks.com
 2023-10-16 18:13 PDT
 
 **Usage Instructions**:
- 1. Manually pull CSV from SFDC tech tracker report & go/isvmatrix
+ 1. Manually pull CSV from SFDC tech tracker (UTF-8, CSV, Details only) report & go/isvmatrix (CSV)
  2. lop off first row of isvmatrix (it has two header rows)
  3. Update paths in isv-sync.py to reflect above files
  4. run isv-sync.py
