@@ -2,13 +2,7 @@
 Python to evaluate CSV files from SFDC &amp; go/isvmatrix and report on discrepancies
 
 **Usage Instructions**:
- 1. Manually pull CSV from SFDC tech tracker (UTF-8, CSV, Details only) report & go/isvmatrix (CSV)
- 2. lop off first row of isvmatrix (it has two header rows)
- 3. Update paths in isv-sync.py to reflect above files
- 4. run isv-sync.py
- 5. View discrepancies
- 6. Manually resolve
- 7. Rinse & Repeat
+https://databricks.atlassian.net/wiki/spaces/KB/pages/edit-v2/3255108447
 
 # v1.1.5
 brian.wooden@databricks.com
