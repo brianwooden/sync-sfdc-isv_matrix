@@ -1,4 +1,5 @@
 import csv
+import pandas as pd
 
 
 def validate_csv_headers(csv_file, expected_headers, dismissable_headers):
@@ -16,15 +17,8 @@ def validate_csv_headers(csv_file, expected_headers, dismissable_headers):
             headers_match = True
         # if they don't, report on difference
         else:
-            print('CSV header validation failed for', csv_file, 'Headers do not match the expected format.')
-            print('Expected headers: ', expected_headers)
-            print('Actual headers: ', headers)
-            difference = list(set(headers) ^ set(expected_headers))
-            if difference:
-                print('\n--> The difference between headers and new_headers is:', difference, '\n')
-            else:
-                print('The lists headers and expected_headers are the same. Hmmm.')
-            if headers == dismissable_headers:
+            # if first three headers match known 'throw away' headers
+            if dismissable_headers.split(',')[0] in headers and dismissable_headers.split(',')[1] in headers and dismissable_headers.split(',')[2] in headers:
                 # if headers are diferent than expected, but known pre-header row, lop it off and keep going
                 print('Actually, the top of', csv_file, 'file starts with header line 1 of 2, and we only use the 2nd line for downstream field list. Lopping off the top line and overwriting', csv_file, ' and continuing.')
                 with open(csv_file, 'r') as fin:
@@ -32,6 +26,16 @@ def validate_csv_headers(csv_file, expected_headers, dismissable_headers):
                 with open(csv_file, 'w') as fout:
                     fout.writelines(data[1:])
                 headers_match = True
+            else:
+                difference = list(set(headers) ^ set(expected_headers))
+                if difference:
+                    print('CSV header validation failed for', csv_file, 'Headers do not match the expected format.')
+                    print('Expected headers: ', expected_headers)
+                    print('Actual headers: ', headers)
+                    print('\n--> The difference between headers and new_headers is:', difference, '\n')
+                else:
+                    print('The lists headers and expected_headers are the same. Hmmm.')
+ 
 
     return headers_match
 
@@ -108,14 +112,17 @@ def main(isv_csv_fieldnames, output_mode):
                                     if isv_row['Partner SA'].upper().split(' ', 1)[1] == 'SEPP' and sfdc_row['Databricks Partner SA'].upper().split(' ', 1)[1] == 'SEPP':
                                         pass
                                     else:
-                                        if not output_mode.upper() == 'CSV':
-                                            print('SFDC Account', sfdc_row['Account Name'], 'has SA', sfdc_row['Databricks Partner SA'], 'whereas go/isvmatrix Account', isv_row['Partner'], 'has SA', isv_row['Partner SA'])
+                                        if isv_row['Partner SA'].upper().split(' ', 1)[1] == 'ZUCKERBERG' and sfdc_row['Databricks Partner SA'].upper().split(' ', 1)[1] == 'ZUCKERBERG':
+                                            pass
                                         else:
-                                            report_finding('SA Delta', sfdc_row['Account Name'], sfdc_row['Databricks Partner SA'], isv_row['Partner'], isv_row['Partner SA'], 'update SA in SFDC to ' + isv_row['Partner SA'])
+                                            if not output_mode.upper() == 'CSV':
+                                                print('SFDC Account', sfdc_row['Account Name'], 'has SA', sfdc_row['Databricks Partner SA'], 'whereas go/isvmatrix Account', isv_row['Partner'], 'has SA', isv_row['Partner SA'])
+                                            else:
+                                                report_finding('SA Delta', sfdc_row['Account Name'], sfdc_row['Databricks Partner SA'], isv_row['Partner'], isv_row['Partner SA'], 'update SA in SFDC to ' + isv_row['Partner SA'])
                                 # whenever we do a split, make sure it isn't a dreaded 7-10 split, as it were (bowling joke! But do make sure we didn't reference an index that didn't exist b/c we're trying to split an unsplittable, as it were
                                 except IndexError:
                                         # ignore matrix POOLED SA if SFDC is Unassigned (otherwise, there is still a discrepancy that needs to be resolved)
-                                        if isv_row['Partner SA'].upper() == 'POOLED' and sfdc_row['Databricks Partner SA'].upper() == 'UNASSIGNED':
+                                        if (isv_row['Partner SA'].upper() == 'POOLED' or isv_row['Partner SA'].upper() == 'NA') and (sfdc_row['Databricks Partner SA'].upper() == 'UNASSIGNED'):
                                             pass
                                         else:
                                             if not output_mode.upper() == 'CSV':
@@ -131,6 +138,7 @@ def main(isv_csv_fieldnames, output_mode):
             # look at both files and print accounts where ISV has different PDM than SFDC
             if not output_mode.upper() == 'CSV':
                 print_section_separator('PDM Deltas')
+            
             for sfdc_row in reader_left:
                 for isv_row in reader_right:
                     if sfdc_row['Account ID'] == isv_row['Databricks Salesforce Account Id']:
@@ -162,7 +170,7 @@ def main(isv_csv_fieldnames, output_mode):
                             if not output_mode.upper() == 'CSV':
                                 print('SFDC Account', sfdc_row['Account Name'],'has validation status as', sfdc_row['ISV Onboarding Status'], 'whereas go/isvmatrix Account', isv_row['Partner'], 'has validation status as', isv_row['Integration Status'])
                             else:
-                                report_finding('Validation Delta', sfdc_row['Account Name'], sfdc_row['ISV Onboarding Status'], isv_row['Partner'], isv_row['Integration Status'], 'updated SFDC validation to ' + isv_row['Integration Status'])
+                                report_finding('Validation Delta', sfdc_row['Account Name'], sfdc_row['ISV Onboarding Status'], isv_row['Partner'], isv_row['Integration Status'], 'update SFDC validation to ' + isv_row['Integration Status'])
 
                 # be kind, rewind ISV file
                 isv_file.seek(0)
@@ -175,13 +183,13 @@ def main(isv_csv_fieldnames, output_mode):
             for sfdc_row in reader_left:
                 for isv_row in reader_right:
                     if sfdc_row['Account ID'] == isv_row['Databricks Salesforce Account Id']:
-                        if isv_row['Partner Category (Salesforce)'] != sfdc_row['ISV Partner Category']:
+                        if isv_row['Partner Category'] != sfdc_row['ISV Partner Category']:
                             # AI/ML show up differently, check for that
-                            if isv_row['Partner Category (Salesforce)'] == 'ML/ AI' and not sfdc_row['ISV Partner Category'] == 'Data Science / Machine Learning':
+                            if isv_row['Partner Category'] == 'ML/ AI' and not sfdc_row['ISV Partner Category'] == 'Data Science / Machine Learning':
                                 if not output_mode.upper() == 'CSV':
-                                    print('SFDC Account', sfdc_row['Account Name'],'has partner category as', sfdc_row['ISV Partner Category'], 'whereas go/isvmatrix Account', isv_row['Partner'], 'has partner category as', isv_row['Partner Category (Salesforce)'])
+                                    print('SFDC Account', sfdc_row['Account Name'],'has partner category as', sfdc_row['ISV Partner Category'], 'whereas go/isvmatrix Account', isv_row['Partner'], 'has partner category as', isv_row['Partner Category'])
                                 else:
-                                    report_finding('Category Delta', sfdc_row['Account Name'], sfdc_row['ISV Partner Category'], isv_row['Partner'], isv_row['Partner Category (Salesforce)'], 'updated SFDC Category to ' + isv_row['Partner Category (Salesforce)'])
+                                    report_finding('Category Delta', sfdc_row['Account Name'], sfdc_row['ISV Partner Category'], isv_row['Partner'], isv_row['Partner Category'], 'update SFDC Category to ' + isv_row['Partner Category'])
                 # be kind, rewind ISV file
                 isv_file.seek(0)
             # be kind, rewind SFDC file
@@ -195,6 +203,8 @@ def main(isv_csv_fieldnames, output_mode):
                 # fieldnames expects a list
                 writer = csv.DictWriter(csvfile, fieldnames=isv_csv_fieldnames)
                 writer.writeheader()
+
+                # append new accounts from SFDC to new matrix file 
                 for sfdc_row in reader_left:
                     sfdc_in_matrix = False
                     for isv_row in reader_right:
@@ -218,7 +228,7 @@ def main(isv_csv_fieldnames, output_mode):
                             print('Adding SFDC Account', sfdc_row['Account Name'],'with Account ID', sfdc_row['Account ID'], 'to go/isvmatrix update-helper file:', new_matrix)
                         else:
                             report_finding('SFDC Exclusive', sfdc_row['Account Name'], sfdc_row['Account ID'], None, None, 'import matrix helpfer file ' + new_matrix)
-                        writer.writerow({'Partner': sfdc_row['Account Name'],'Partner Manager': sfdc_row['Partner Manager'],'Partner Category (Salesforce)': sfdc_row['ISV Partner Category'],'Partner SA': sfdc_row['Databricks Partner SA'],'Databricks Salesforce Account Id': sfdc_row['Account ID'],'Integration Status': sfdc_row['ISV Onboarding Status']})
+                        writer.writerow({'Partner': sfdc_row['Account Name'],'Partner Manager': sfdc_row['Partner Manager'],'Partner Category': sfdc_row['ISV Partner Category'],'Partner SA': sfdc_row['Databricks Partner SA'],'Databricks Salesforce Account Id': sfdc_row['Account ID'],'Integration Status': sfdc_row['ISV Onboarding Status']})
                     # be kind, rewind ISV file
                     isv_file.seek(0)
             # be kind, rewind SFDC file
@@ -264,7 +274,7 @@ def main(isv_csv_fieldnames, output_mode):
                 if not output_mode.upper() == 'CSV':
                     print('Not in SFDC: ISV Matrix Account', partner,'with Account ID', account_id)
                 else:
-                    report_finding('ISV Exclusive', None, None, partner, account_id, 'Remove from or fix account ID in Matrix')
+                    report_finding('ISV Exclusive', None, None, partner, account_id, 'Remove from Matrix or fix account ID in Matrix')
 
 if __name__ == "__main__":
     """
@@ -281,17 +291,25 @@ if __name__ == "__main__":
     new_matrix = 'new_matrix.csv'
 
     # stash string of expected headers into a string
-    isv_expected_headers = 'Tier,Tier Staging Area (WIP for PDM),Partner,Partner Product,Partner Category (Salesforce),Product sub-category,Integration Status,Partner\'s Customer Facing Integration Docs Link,Partner Manager,Partner SA,SaaS,Self-hosted,Cloud Marketplace,On Databricks Partner Connect,Has OSS offering,Has free saas trial,Has on-prem agent,AWS,Azure,GCP,Have Databricks named connector,Delta as source,Delta as target,Library,PAT Tokens,OAuth - Azure AAD,OAuth - AWS,SQL Warehouse,Serverless,Interactive Clusters,Automated Clusters,Delta Live Tables,Support Unity Catalog,Multiple catalog support,Catalog configured at connection in ISV product,Supports Delta Sharing,Execute SQL,Submits Python Jobs,Submits Scala or Java Jobs,REST api,JDBC,Push down DLT,ODBC,Use Databricks Connectors,User Agent string passed,Integration uses a Library,ML flow integration,Strengths,Comments (pricing and misc),Partners documentation link,Automatically create delta tables if the table does not exist,Support external tables,Support partitioning based on certain columns,ISV managed staging location for Ingest,Customer owned staging location for ingest,UC managed personal staging locations for ingest,Support UC external tables,g1,g2,g3,s1,s2,s3,s4,Integrates with mlflow registry,Integrates with mlflow experiments and tracking,Integrates with model serving,Integrates with databricks feature store,Push ML workloads into Databricks,Databricks Salesforce Account Id,Last updated date,Last integration review mm/yyyy,FedRAMP,HIPAA,Built on Databricks'
+    isv_expected_headers = 'Canonical Partner Name (JIRA),Tier,Partner,Partner Product,Partner Category,Product sub-category,Integration Status,Partner\'s Customer Facing Integration Docs Link,Partner Manager,Partner SA,SaaS,Self-hosted,Cloud Marketplace,On Databricks Partner Connect,Has OSS offering,Has free saas trial,Has on-prem agent,AWS,Azure,GCP,Have Databricks named connector,Delta as source,Delta as target,Library,PAT Tokens,OAuth - Azure AAD,OAuth - AWS,SQL Warehouse,Serverless,Interactive Clusters,Automated Clusters,Vector Search,Foundational Model API,Delta Live Tables,Support Unity Catalog,Multiple catalog support,Catalog configured at connection in ISV product,Supports Delta Sharing,Execute SQL,Submits Python Jobs,Submits Scala or Java Jobs,REST api,JDBC,Push down DLT,ODBC,Use Databricks Connectors,User Agent string passed,Integration uses a Library,ML flow integration,Strengths,Comments (pricing and misc),Partners documentation link,Automatically create delta tables if the table does not exist,Support external tables,Support partitioning based on certain columns,ISV managed staging location for Ingest,Customer owned staging location for ingest,UC managed personal staging locations for ingest,UC Volumes as staging location for ingest,Support UC external tables,g1,g2,g3,s1,s2,s3,s4,Integrates with mlflow registry,Integrates with mlflow experiments and tracking,Integrates with model serving,Integrates with databricks feature store,Push ML workloads into Databricks,Databricks Salesforce Account Id,Last updated date,Last integration review mm/yyyy,FedRAMP,HIPAA,Built on Databricks'
     # convert string to a list
     isv_expected_headers = isv_expected_headers.split(',')
-    # identify false header row & convert string to a list
-    isv_false_headers = ',,num_validated_intgrtns,147,,,,,,,Deployment,,,,,,,Clouds Supported for Databricks Integration,,,Databricks Connector,,,,Authentication,,,Databricks features supported,,,,,Unity Catalog,,,,Integration mechanism ,,,,,,,,,,,General,,,Ingest / ETL / Reverse ETL,,,,,,,Governance,,,Security,,,,ML,,,,,ISV Team Metadata,,,(optional) Additional fields,,'
-    isv_false_headers = isv_false_headers.split(',')
+    # identify false header row beginning
+    isv_false_headers_start = ',,num_validated_intgrtns,'
 
-    if validate_csv_headers(isv_matrix, isv_expected_headers, isv_false_headers):
+    if validate_csv_headers(isv_matrix, isv_expected_headers, isv_false_headers_start):
         # stash string of expected headers into a list
-        sfdc_expected_headers = 'Account Name,Partner Manager,ISV Partner Category,Databricks Partner SA,PPA Signed IP Address,New Partner Agreement Signed Date,Created Date,Account ID,ISV Onboarding Status'
-        sfdc_expected_headers = sfdc_expected_headers.split(',')
-        if validate_csv_headers(sfdc, sfdc_expected_headers, None):
+
+        # check that required SFDC headers are present, 
+        # but don't worry if there are additional headers (because we aren't writing out new SFDC rows like we are for ISV Matrix)
+        sfdc_expected_headers = ['Account Name', 'Partner Manager', 'ISV Partner Category', 'Databricks Partner SA', 'PPA Signed IP Address', 'New Partner Agreement Signed Date', 'Created Date', 'Account ID', 'ISV Onboarding Status']
+        # Read the sfdc CSV file
+        df = pd.read_csv('sfdc.csv')
+        # Check if all expected headers exist in the CSV file
+        missing_headers = [header for header in sfdc_expected_headers if header not in df.columns]
+        # Raise an exception if any header is missing
+        if missing_headers:
+            raise Exception(f"The following headers are missing in the CSV file: {', '.join(missing_headers)}")
+        else:
             #output mode can be constrained to 'csv', any other value results in free form text output
             main(isv_expected_headers, 'csv')

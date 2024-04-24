@@ -10,6 +10,30 @@ Python to evaluate CSV files from SFDC &amp; go/isvmatrix and report on discrepa
  6. Manually resolve
  7. Rinse & Repeat
 
+# v1.1.5
+brian.wooden@databricks.com
+2024-04-24 11:26 EST
+
+## Changelog
+  - Updated dismissable header row logic to avoid worrying about number of integrations
+
+# v1.1.4
+brian.wooden@databricks.com
+2024-03-01 18:49 EST
+
+## Changelog
+  - Updated to check required SFDC fields are present in the headers but don't worry if there are extra ones (we don't write SFDC report rows)
+  - updated NA skip logic (to complement POOLED logic)
+  - upddated headers in-code to remove '(Salesforce)' from Partner Category
+  - added logic to ignore first name if last name is Zuckerberg (similar to Sepp)
+
+# v1.1.3
+brian.wooden@databricks.com
+2023-12-04 11:51 EST
+
+## Changelog
+  - Updated to change in-memory PDM recommendation for matrix (doesn't write to file at this time)
+
 # v1.1.2
 brian.wooden@databricks.com
 2023-10-17 09:18 PDT
