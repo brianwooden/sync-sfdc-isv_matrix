@@ -36,7 +36,6 @@ def validate_csv_headers(csv_file, expected_headers, dismissable_headers):
                 else:
                     print('The lists headers and expected_headers are the same. Hmmm.')
  
-
     return headers_match
 
 def print_section_separator(heading_text):
@@ -78,6 +77,15 @@ def report_finding(section, sfdc_partner, sfdc_item, matrix_partner, matrix_item
         recommended_action = recommended_action.replace(',', '')
     print (','.join([section, sfdc_partner, sfdc_item, matrix_partner, matrix_item, recommended_action]))
 
+def mark_partner_as_validated(validation_dict, sfdc_id, sfdc_partner, sfdc_item, matrix_partner, matrix_item):
+    validation_dict[sfdc_id] = {
+        'validated': True, 
+        'sfdc_partner': sfdc_partner, 
+        'matrix_partner': matrix_partner, 
+        'sfdc_validation_value': sfdc_item, 
+        'matrix_validation_value': matrix_item
+    }
+    return validation_dict
 
 def main(isv_csv_fieldnames, output_mode):
     # open SFDC file as "left table", open ISV file as "right table" ~ish
@@ -129,7 +137,6 @@ def main(isv_csv_fieldnames, output_mode):
                                                 print('SFDC Account', sfdc_row['Account Name'], 'has SA', sfdc_row['Databricks Partner SA'], 'whereas go/isvmatrix Account', isv_row['Partner'], 'has SA', isv_row['Partner SA'])
                                             else:
                                                 report_finding('SA Delta', sfdc_row['Account Name'], sfdc_row['Databricks Partner SA'], isv_row['Partner'], isv_row['Partner SA'], 'update SA in SFDC to ' + isv_row['Partner SA'])
-
                 # rewind ISV file
                 isv_file.seek(0)
             # be kind, rewind SFDC file
@@ -158,25 +165,6 @@ def main(isv_csv_fieldnames, output_mode):
             # be kind, rewind SFDC file
             sfdc_file.seek(0)
 
-
-            # look at both files and print accounts where ISV says integration is validated but SFDC says it is in development
-            # NB: This takes into account other integration status messages that are beyond validated, such as "Partner Connect Tile Published" etc
-            if not output_mode.upper() == 'CSV':
-                print_section_separator('Integration Status Deltas')
-            for sfdc_row in reader_left:
-                for isv_row in reader_right:
-                    if sfdc_row['Account ID'] == isv_row['Databricks Salesforce Account Id']:
-                        if isv_row['Integration Status'] == 'Integration Validated' and sfdc_row['ISV Onboarding Status'] == 'Integration in Development':
-                            if not output_mode.upper() == 'CSV':
-                                print('SFDC Account', sfdc_row['Account Name'],'has validation status as', sfdc_row['ISV Onboarding Status'], 'whereas go/isvmatrix Account', isv_row['Partner'], 'has validation status as', isv_row['Integration Status'])
-                            else:
-                                report_finding('Validation Delta', sfdc_row['Account Name'], sfdc_row['ISV Onboarding Status'], isv_row['Partner'], isv_row['Integration Status'], 'update SFDC validation to ' + isv_row['Integration Status'])
-
-                # be kind, rewind ISV file
-                isv_file.seek(0)
-            # be kind, rewind SFDC file
-            sfdc_file.seek(0)
-
             # look at both files and print accounts where categories are different
             if not output_mode.upper() == 'CSV':
                 print_section_separator('Category Deltas')
@@ -195,44 +183,43 @@ def main(isv_csv_fieldnames, output_mode):
             # be kind, rewind SFDC file
             sfdc_file.seek(0)
 
-            # look for accounts that exist in SFDC but not ISV Matrix, print those
+            # look at both files and print accounts where validation statuses are different
+            # if different, and matrix says validated, report that and recommend sfdc be updated to match
+            validations = {}
             if not output_mode.upper() == 'CSV':
-                print_section_separator('Account Deltas (in SFDC, not in ISV Matrix)')
-            # open new csv for things in sfdc that aren't in matrix, define & write headers
-            with open(new_matrix, 'w', newline='\n') as csvfile:
-                # fieldnames expects a list
-                writer = csv.DictWriter(csvfile, fieldnames=isv_csv_fieldnames)
-                writer.writeheader()
-
-                # append new accounts from SFDC to new matrix file 
-                for sfdc_row in reader_left:
-                    sfdc_in_matrix = False
-                    for isv_row in reader_right:
-                        if sfdc_row['Account ID'] == isv_row['Databricks Salesforce Account Id']:
-                            sfdc_in_matrix = True
-                    if not sfdc_in_matrix and sfdc_row['Account ID'] != 'Account ID':
-                        # fix-up a few things for the ISV Matrix, accounting for known discrepancies between SFDC & go/isvmatrix regarding validation status && partner category
-                        if sfdc_row['ISV Onboarding Status'] == 'GTM Collateral Published':
+                print_section_separator('Validation Deltas')
+            for sfdc_row in reader_left:
+                for isv_row in reader_right:
+                    if sfdc_row['Account ID'] == isv_row['Databricks Salesforce Account Id']:
+                        # normalize isv matrix validation statuses
+                        matrix_validation_status = isv_row['Integration Status']
+                        match matrix_validation_status:
+                            case 'Integration Validated':
+                                matrix_validation_status = 'validated'
+                            case 'Partner Connect Tile Published':
+                                matrix_validation_status = 'validated'
+                            case 'Validated Partner: Onboarding Complete':
+                                matrix_validation_status = 'validated'
+                        # normalize sfdc validation statuses
+                        sfdc_validation_status = sfdc_row['ISV Onboarding Status']
+                        match sfdc_validation_status:
+                            case 'Integration Validated':
+                                sfdc_validation_status = 'validated'
+                            case 'Validated Partner: Onboarding Complete':
+                                sfdc_validation_status = 'validated'
+                        # compare validation statuses, if matrix has a validation status defined 
+                        if matrix_validation_status != sfdc_validation_status and matrix_validation_status == 'validated':
                             if not output_mode.upper() == 'CSV':
-                                print ('Updating SFDC Account', sfdc_row['Account Name'], 'integration status from', sfdc_row['ISV Onboarding Status'], 'to Integration Validated in go/isvmatrix update-helper file...')
-                            sfdc_row['ISV Onboarding Status'] = 'Integration Validated'
-                        if sfdc_row['ISV Onboarding Status'] == 'Integration Certified':
-                            if not output_mode.upper() == 'CSV':
-                                print ('Updating SFDC Account', sfdc_row['Account Name'], 'integration status from', sfdc_row['ISV Onboarding Status'], 'to Integration Validated in go/isvmatrix update-helper file...')
-                            sfdc_row['ISV Onboarding Status'] = 'Integration Validated'
-                        if sfdc_row['ISV Partner Category'] == 'Data Science / Machine Learning':
-                            if not output_mode.upper() == 'CSV':
-                                print ('Updating SFDC Account', sfdc_row['Account Name'], 'category from', sfdc_row['ISV Partner Category'], 'to ML/ AI in go/isvmatrix update-helper file...')
-                            sfdc_row['ISV Partner Category'] = 'ML/ AI'
-                        if not output_mode.upper() == 'CSV':
-                            print('Adding SFDC Account', sfdc_row['Account Name'],'with Account ID', sfdc_row['Account ID'], 'to go/isvmatrix update-helper file:', new_matrix)
-                        else:
-                            report_finding('SFDC Exclusive', sfdc_row['Account Name'], sfdc_row['Account ID'], None, None, 'import matrix helpfer file ' + new_matrix)
-                        writer.writerow({'Partner': sfdc_row['Account Name'],'Partner Manager': sfdc_row['Partner Manager'],'Partner Category': sfdc_row['ISV Partner Category'],'Partner SA': sfdc_row['Databricks Partner SA'],'Databricks Salesforce Account Id': sfdc_row['Account ID'],'Integration Status': sfdc_row['ISV Onboarding Status']})
-                    # be kind, rewind ISV file
-                    isv_file.seek(0)
+                                print('SFDC Account', sfdc_row['Account Name'],'has validation status as', sfdc_row['ISV Onboarding Status'], 'whereas go/isvmatrix Account', isv_row['Partner'], 'has validation status as', isv_row['Integration Status'])
+                            else:
+                                validations = mark_partner_as_validated(validations, sfdc_row['Account ID'], sfdc_row['Account Name'], sfdc_row['ISV Onboarding Status'], isv_row['Partner'], isv_row['Integration Status'])
+                # be kind, rewind ISV file
+                isv_file.seek(0)
             # be kind, rewind SFDC file
             sfdc_file.seek(0)
+            # loop through validations and report them...
+            for sfdc_id in validations.keys():
+                report_finding('Validation Delta', validations[sfdc_id]['sfdc_partner'], validations[sfdc_id]['sfdc_validation_value'], validations[sfdc_id]['matrix_partner'], validations[sfdc_id]['matrix_validation_value'], 'update SFDC account {} ({}) to validated'.format(validations[sfdc_id]['sfdc_partner'], sfdc_id))
 
             # look for accounts that exist in ISV Matrix but not SFDC, print those
             not_in_sfdc = []
@@ -275,6 +262,46 @@ def main(isv_csv_fieldnames, output_mode):
                     print('Not in SFDC: ISV Matrix Account', partner,'with Account ID', account_id)
                 else:
                     report_finding('ISV Exclusive', None, None, partner, account_id, 'Remove from Matrix or fix account ID in Matrix')
+
+
+            # look for accounts that exist in SFDC but not ISV Matrix, print those
+            if not output_mode.upper() == 'CSV':
+                print_section_separator('Account Deltas (in SFDC, not in ISV Matrix)')
+            # open new csv for things in sfdc that aren't in matrix, define & write headers
+            with open(new_matrix, 'w', newline='\n') as csvfile:
+                # fieldnames expects a list
+                writer = csv.DictWriter(csvfile, fieldnames=isv_csv_fieldnames)
+                writer.writeheader()
+
+                # append new accounts from SFDC to new matrix file 
+                for sfdc_row in reader_left:
+                    sfdc_in_matrix = False
+                    for isv_row in reader_right:
+                        if sfdc_row['Account ID'] == isv_row['Databricks Salesforce Account Id']:
+                            sfdc_in_matrix = True
+                    if not sfdc_in_matrix and sfdc_row['Account ID'] != 'Account ID':
+                        # fix-up a few things for the ISV Matrix, accounting for known discrepancies between SFDC & go/isvmatrix regarding validation status && partner category
+                        if sfdc_row['ISV Onboarding Status'] == 'GTM Collateral Published':
+                            if not output_mode.upper() == 'CSV':
+                                print ('Updating SFDC Account', sfdc_row['Account Name'], 'integration status from', sfdc_row['ISV Onboarding Status'], 'to Integration Validated in go/isvmatrix update-helper file...')
+                            sfdc_row['ISV Onboarding Status'] = 'Integration Validated'
+                        if sfdc_row['ISV Onboarding Status'] == 'Integration Certified':
+                            if not output_mode.upper() == 'CSV':
+                                print ('Updating SFDC Account', sfdc_row['Account Name'], 'integration status from', sfdc_row['ISV Onboarding Status'], 'to Integration Validated in go/isvmatrix update-helper file...')
+                            sfdc_row['ISV Onboarding Status'] = 'Integration Validated'
+                        if sfdc_row['ISV Partner Category'] == 'Data Science / Machine Learning':
+                            if not output_mode.upper() == 'CSV':
+                                print ('Updating SFDC Account', sfdc_row['Account Name'], 'category from', sfdc_row['ISV Partner Category'], 'to ML/ AI in go/isvmatrix update-helper file...')
+                            sfdc_row['ISV Partner Category'] = 'ML/ AI'
+                        if not output_mode.upper() == 'CSV':
+                            print('Adding SFDC Account', sfdc_row['Account Name'],'with Account ID', sfdc_row['Account ID'], 'to go/isvmatrix update-helper file:', new_matrix)
+                        else:
+                            report_finding('SFDC Exclusive', sfdc_row['Account Name'], sfdc_row['Account ID'], None, None, 'import matrix helpfer file ' + new_matrix)
+                        writer.writerow({'Partner': sfdc_row['Account Name'],'Partner Manager': sfdc_row['Partner Manager'],'Partner Category': sfdc_row['ISV Partner Category'],'Partner SA': sfdc_row['Databricks Partner SA'],'Databricks Salesforce Account Id': sfdc_row['Account ID'],'Integration Status': sfdc_row['ISV Onboarding Status']})
+                    # be kind, rewind ISV file
+                    isv_file.seek(0)
+            # be kind, rewind SFDC file
+            sfdc_file.seek(0)
 
 if __name__ == "__main__":
     """

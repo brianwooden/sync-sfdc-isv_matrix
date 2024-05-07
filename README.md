@@ -6,6 +6,27 @@ Python to evaluate CSV files from SFDC &amp; go/isvmatrix and report on discrepa
 
 [SFDC Tech Partner Tracker ISV Matrix Sync Confluence Page](https://databricks.atlassian.net/wiki/spaces/KB/pages/3255108447/SFDC+Tech+Partner+Tracker+ISV+Matrix+Sync)
 
+# v1.2
+
+brian.wooden@databricks.com
+
+2024-05-07 13:10 EST
+
+## Changelog
+
+  - Switched order of operations so SFDC Exclusive (Matrix adds) arrive last
+  - Re-wrote validation status logic based on new assumptions (only report if any of a partner's products are validated in the matrix and that partner is not validated in SFDC)
+
+# v1.1.6
+
+brian.wooden@databricks.com
+
+2024-05-06 13:26 EST
+
+## Changelog
+
+  - Switched order of operations so SFDC Exclusive (Matrix adds) arrive last
+
 # v1.1.5
 
 brian.wooden@databricks.com
